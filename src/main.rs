@@ -6,22 +6,43 @@ const SELECTED: i16 = 1;
 fn main() {
     initscr();
     noecho();
+
     curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
 
     start_color();
+
     init_pair(REGULAR, COLOR_WHITE, COLOR_BLACK);
     init_pair(SELECTED, COLOR_BLACK, COLOR_WHITE);
 
-    let menu: [&str; 5] = ["Menú: ", "List", "Add", "Edit", "Remove"];
+    let menu: [&str; 5] = ["Menu: ", "List", "Add", "Edit", "Remove"];
 
     let option = crate_menu(&mut menu.to_vec());
-    mv(menu.len() as i32, 1);
-    addstr(&format!("Option selected: {}", option));
-    getch();
+
+    if option == 1 {
+        list_menu();
+    }
+
     endwin();
 }
 
+fn list_menu() -> u32 {
+    initscr();
+    clear();
+    noecho();
+
+    let menu: [&str; 4] = ["Options: ", "All", "Completed", "Incompleted"];
+    let option = crate_menu(&mut menu.to_vec());
+
+    if option == 1 {
+        clear();
+        addstr(&format!(" Tasks:     "));
+        getch();
+    }
+    1
+}
+
 fn crate_menu(options: &mut [&str]) -> i16 {
+    mv(options.len() as i32, 1);
     let mut current_option: i16 = 1;
     let mut repeat = false;
     let mut final_option: i16 = 0;
