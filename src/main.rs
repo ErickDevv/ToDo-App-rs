@@ -1,9 +1,10 @@
+use create_menu::create_menu;
 use ncurses::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs;
 use std::io::prelude::*;
-
+mod create_menu;
 #[derive(Serialize, Deserialize, Debug)]
 struct Task {
     name: String,
@@ -19,27 +20,59 @@ fn main() {
     noecho();
 
     curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
-
+    
     start_color();
-
+    
     init_pair(REGULAR, COLOR_WHITE, COLOR_BLACK);
     init_pair(SELECTED, COLOR_BLACK, COLOR_WHITE);
 
-    let menu: [&str; 6] = ["Menu: ", "List", "Add", "Edit", "Remove", "Exit"];
+    let menu: [&str; 4] = ["Menu: ", "List/Edit/Remove", "Add", "Exit"];
     let mut repeat = true;
 
     while repeat == true {
         clear();
-        let option = crate_menu(&mut menu.to_vec());
+        let option = create_menu::create_menu(&mut menu.to_vec());
 
         if option == 1 {
             list_menu();
-        } else if option == 5 {
+        } else if option == 2 {
+            add();
+        } else if option == 3 {
             repeat = false;
         }
     }
 
     endwin();
+}
+
+fn add() {
+    let mut name: String = String::new();
+    let mut description: String = String::new();
+
+    clear();
+    echo();
+
+    addstr("Name: ");
+    refresh();
+    getstr(&mut name);
+
+    clear();
+
+    addstr("Description: ");
+    refresh();
+    getstr(&mut description);
+
+    let task = Task {
+        name: name,
+        description: description,
+        completed: false,
+    };
+
+    let mut tasks: Vec<Task> = read_db();
+    tasks.push(task);
+    let json = serde_json::to_string(&tasks).unwrap();
+    fs::write("src/db.json", json).expect("Unable to write file");
+    noecho();
 }
 
 fn read_db() -> Vec<Task> {
@@ -59,53 +92,33 @@ fn list_menu() -> u32 {
     noecho();
 
     let menu: [&str; 4] = ["Options: ", "All", "Completed", "Pending"];
-    let option = crate_menu(&mut menu.to_vec());
+    let option = create_menu::create_menu(&mut menu.to_vec());
 
-    if option == 1 {
-        clear();
-        let tasks: Vec<Task> = read_db();
-        for task in tasks {
-            addstr(&task.name);
+    let tasks: Vec<Task> = read_db();
+    clear();
+    for task in tasks {
+        if option == 1 {
+            addstr(&get_task(task));
+            addstr("\n");
+        } else if task.completed == true && option == 2 {
+            addstr(&get_task(task));
+            addstr("\n");
+        } else if task.completed == false && option == 3 {
+            addstr(&get_task(task));
             addstr("\n");
         }
-        refresh();
-        getch();
     }
+    getch();
     1
 }
 
-fn crate_menu(options: &mut [&str]) -> i16 {
-    mv(options.len() as i32, 1);
-    let mut current_option: i16 = 1;
-    let mut repeat = false;
-    let mut final_option: i16 = 0;
-    while repeat == false {
-        for (i, todo) in options.iter().enumerate() {
-            let pair = if i == current_option as usize {
-                SELECTED
-            } else {
-                REGULAR
-            };
-            attron(COLOR_PAIR(pair));
-            mv(i as i32, 1);
-            addstr(*todo);
-            attroff(COLOR_PAIR(pair));
-        }
-
-        refresh();
-
-        let key = getch();
-        if key == 101 {
-            repeat = true;
-        } else if key == 119 && current_option > 1 {
-            current_option -= 1;
-        } else if key == 115 && current_option < options.len() as i16 - 1 {
-            current_option += 1;
-        } else if key == 100 {
-            final_option = current_option;
-            repeat = true;
-        }
-    }
-
-    final_option
+fn get_task(task: Task) -> String {
+    let pre: String = if task.completed == true {
+        "[x] ".to_owned()
+    } else {
+        "[ ] ".to_owned()
+    };
+    let name: String = task.name.to_owned();
+    let owned_name: String = format!("{}{}", pre, name);
+    owned_name
 }
