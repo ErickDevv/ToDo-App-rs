@@ -1,10 +1,12 @@
-use create_menu::create_menu;
-use ncurses::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
+
 use std::fs;
 use std::io::prelude::*;
-mod create_menu;
+
+use rsmenuu::create_menu;
+use rsmenuu::instructions_off;
+use rsmenuu::MenuResult;
 #[derive(Serialize, Deserialize, Debug)]
 struct Task {
     name: String,
@@ -12,67 +14,45 @@ struct Task {
     completed: bool,
 }
 
-const REGULAR: i16 = 0;
-const SELECTED: i16 = 1;
-
 fn main() {
-    initscr();
-    noecho();
+    main_menu();
+}
 
-    curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
-    
-    start_color();
-    
-    init_pair(REGULAR, COLOR_WHITE, COLOR_BLACK);
-    init_pair(SELECTED, COLOR_BLACK, COLOR_WHITE);
+fn main_menu() {
+    let options: Vec<&str> = vec!["Add", "List/Edit/Remove"];
 
-    let menu: [&str; 4] = ["Menu: ", "List/Edit/Remove", "Add", "Exit"];
-    let mut repeat = true;
+    let menu_results: MenuResult = create_menu("Menú", options, instructions_off(), true);
 
-    while repeat == true {
-        clear();
-        let option = create_menu::create_menu(&mut menu.to_vec());
+    if menu_results.index == 0 {
+        //add();
+    } else if menu_results.index == 1 {
+        list_edit_remove();
+    }
+}
 
-        if option == 1 {
-            list_menu();
-        } else if option == 2 {
-            add();
-        } else if option == 3 {
-            repeat = false;
+fn list_edit_remove() {
+    let options: Vec<&str> = vec!["All", "Completed", "Uncompleted"];
+    let menu_results: MenuResult =
+        create_menu("List/Edit/Remove", options, instructions_off(), true);
+    let tasks: Vec<Task> = read_db();
+    let mut task_names: Vec<String> = Vec::new();
+    for task in tasks {
+        if menu_results.index == 0 {
+            task_names.push(get_task(task));
+        } else if menu_results.index == 1 {
+            if task.completed == true {
+                task_names.push(get_task(task));
+            }
+        } else if menu_results.index == 2 {
+            if task.completed == false {
+                task_names.push(get_task(task));
+            }
         }
     }
 
-    endwin();
-}
-
-fn add() {
-    let mut name: String = String::new();
-    let mut description: String = String::new();
-
-    clear();
-    echo();
-
-    addstr("Name: ");
-    refresh();
-    getstr(&mut name);
-
-    clear();
-
-    addstr("Description: ");
-    refresh();
-    getstr(&mut description);
-
-    let task = Task {
-        name: name,
-        description: description,
-        completed: false,
-    };
-
-    let mut tasks: Vec<Task> = read_db();
-    tasks.push(task);
-    let json = serde_json::to_string(&tasks).unwrap();
-    fs::write("src/db.json", json).expect("Unable to write file");
-    noecho();
+    for task in task_names {
+        println!("{}", task);
+    }
 }
 
 fn read_db() -> Vec<Task> {
@@ -84,32 +64,6 @@ fn read_db() -> Vec<Task> {
 
     let tasks: Vec<Task> = serde_json::from_str(&contents).expect("JSON was not well-formatted");
     tasks
-}
-
-fn list_menu() -> u32 {
-    initscr();
-    clear();
-    noecho();
-
-    let menu: [&str; 4] = ["Options: ", "All", "Completed", "Pending"];
-    let option = create_menu::create_menu(&mut menu.to_vec());
-
-    let tasks: Vec<Task> = read_db();
-    clear();
-    for task in tasks {
-        if option == 1 {
-            addstr(&get_task(task));
-            addstr("\n");
-        } else if task.completed == true && option == 2 {
-            addstr(&get_task(task));
-            addstr("\n");
-        } else if task.completed == false && option == 3 {
-            addstr(&get_task(task));
-            addstr("\n");
-        }
-    }
-    getch();
-    1
 }
 
 fn get_task(task: Task) -> String {

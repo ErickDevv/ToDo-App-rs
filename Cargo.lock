@@ -56,6 +56,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rsmenuu"
+version = "0.1.0"
+source = "git+https://github.com/ErickDevv/rsmenuu#284c89600406fe630e03c648015096516f6f7660"
+dependencies = [
+ "ncurses",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -107,7 +115,7 @@ dependencies = [
 name = "todoapp-rust"
 version = "0.1.0"
 dependencies = [
- "ncurses",
+ "rsmenuu",
  "serde",
  "serde_json",
 ]
