@@ -3,10 +3,13 @@ use serde_json;
 
 use std::fs;
 use std::io::prelude::*;
+use std::vec;
 
 use rsmenuu::create_menu;
 use rsmenuu::instructions_off;
+use rsmenuu::Key;
 use rsmenuu::MenuResult;
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Task {
     name: String,
@@ -19,14 +22,23 @@ fn main() {
 }
 
 fn main_menu() {
-    let options: Vec<&str> = vec!["Add", "List/Edit/Remove"];
+    let mut exit_menu = false;
 
-    let menu_results: MenuResult = create_menu("Menú", options, instructions_off(), true);
+    while exit_menu == false {
+        let options: Vec<&str> = vec!["Add", "List/Edit/Remove"];
+        let keys: Vec<Key> = vec![Key {
+            key: 'e',
+            description: String::from("Press 'e' to exit"),
+        }];
 
-    if menu_results.index == 0 {
-        //add();
-    } else if menu_results.index == 1 {
-        list_edit_remove();
+        let menu_results: MenuResult = create_menu("Menú", options, keys, true);
+        if menu_results.key == 'e' {
+            exit_menu = true;
+        } else if menu_results.index == 0 {
+            add();
+        } else if menu_results.index == 1 {
+            list_edit_remove();
+        }
     }
 }
 
@@ -50,19 +62,72 @@ fn list_edit_remove() {
         }
     }
 
-    for task in task_names {
-        println!("{}", task);
+    let options: Vec<&str> = task_names.iter().map(|s| &**s).collect();
+
+    let keys: Vec<Key> = vec![
+        Key {
+            key: 'e',
+            description: String::from("Press 'e' to exit"),
+        },
+        Key {
+            key: 'r',
+            description: String::from("Press 'r' to delete"),
+        },
+    ];
+    let menu_results: MenuResult = create_menu("Tasks", options, keys, false);
+
+    if menu_results.key == 'e' {
+        main_menu();
+    } else if menu_results.key == 'r' {
+        let mut tasks: Vec<Task> = read_db();
+        tasks.remove(menu_results.index);
+        update_db(tasks);
+        list_edit_remove();
     }
 }
 
+fn add() {
+    println!("Name: ");
+
+    let mut name = String::new();
+
+    std::io::stdin()
+        .read_line(&mut name)
+        .expect("Error reading the name");
+
+    println!("Description: ");
+
+    let mut description = String::new();
+
+    std::io::stdin()
+        .read_line(&mut description)
+        .expect("Error reading the description");
+
+    let task = Task {
+        name: name.trim().to_string(),
+        description: description.trim().to_string(),
+        completed: false,
+    };
+
+    let mut tasks: Vec<Task> = read_db();
+    tasks.push(task);
+
+    update_db(tasks);
+}
+
+fn update_db(tasks: Vec<Task>) {
+    let json = serde_json::to_string(&tasks).expect("Error serializing the task");
+    fs::write("src/db.json", json).expect("Error writing the task");
+}
+
 fn read_db() -> Vec<Task> {
-    let mut file = fs::File::open("src/db.json").expect("file not found");
+    let mut file = fs::File::open("src/db.json").expect("Error opening the file");
     let mut contents = String::new();
 
     file.read_to_string(&mut contents)
-        .expect("something went wrong reading the file");
+        .expect("Error reading the file");
 
-    let tasks: Vec<Task> = serde_json::from_str(&contents).expect("JSON was not well-formatted");
+    let tasks: Vec<Task> = serde_json::from_str(&contents).expect("Error deserializing the task");
     tasks
 }
 

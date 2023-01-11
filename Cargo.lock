@@ -58,7 +58,7 @@ dependencies = [
 [[package]]
 name = "rsmenuu"
 version = "0.1.0"
-source = "git+https://github.com/ErickDevv/rsmenuu#284c89600406fe630e03c648015096516f6f7660"
+source = "git+https://github.com/ErickDevv/rsmenuu#ee4db623184c58f192a842d7730d32f0a010e90b"
 dependencies = [
  "ncurses",
 ]
