@@ -6,8 +6,6 @@ use std::io::prelude::*;
 use std::vec;
 
 use rsmenuu::create_menu;
-use rsmenuu::instructions_off;
-use rsmenuu::Key;
 use rsmenuu::MenuResult;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -25,18 +23,19 @@ fn main_menu() {
     let mut exit_menu = false;
 
     while exit_menu == false {
-        let options: Vec<&str> = vec!["Add", "List/Edit/Remove"];
-        let keys: Vec<Key> = vec![Key {
-            key: 'e',
-            description: String::from("Press 'e' to exit"),
-        }];
+        let menu_results: MenuResult = create_menu!(
+            "Menú",
+            "https://github.com/ErickDevv/rsmenuu",
+            vec!["Press 'e' to exit"],
+            vec!["Add", "List/Edit/Remove"],
+            vec!['e', 'x']
+        );
 
-        let menu_results: MenuResult = create_menu("Menú", options, keys, true);
         if menu_results.key == 'e' {
             exit_menu = true;
-        } else if menu_results.index == 0 {
+        } else if menu_results.selected == 0 {
             add();
-        } else if menu_results.index == 1 {
+        } else if menu_results.selected == 1 {
             list_edit_remove();
         }
     }
@@ -44,45 +43,49 @@ fn main_menu() {
 
 fn list_edit_remove() {
     let options: Vec<&str> = vec!["All", "Completed", "Uncompleted"];
-    let menu_results: MenuResult =
-        create_menu("List/Edit/Remove", options, instructions_off(), true);
+
+    let menu_results: MenuResult = create_menu!(
+        "List/Edit/Remove",
+        "Select an option",
+        vec!["Press 'e' to exit"],
+        options,
+        vec!['e']
+    );
+
     let tasks: Vec<Task> = read_db();
+
     let mut task_names: Vec<String> = Vec::new();
     for task in tasks {
-        if menu_results.index == 0 {
+        if menu_results.selected == 0 {
             task_names.push(get_task(task));
-        } else if menu_results.index == 1 {
+        } else if menu_results.selected == 1 {
             if task.completed == true {
                 task_names.push(get_task(task));
             }
-        } else if menu_results.index == 2 {
+        } else if menu_results.selected == 2 {
             if task.completed == false {
                 task_names.push(get_task(task));
             }
         }
     }
+    if task_names.len() == 0 {
+        return;
+    } else {
+        let options: Vec<&str> = task_names.iter().map(|s| &**s).collect();
+        let menu_results: MenuResult = create_menu!(
+            "Tasks",
+            "",
+            vec!["Press 'e' to exit", "Press 'r' to delete"],
+            options,
+            vec!['e', 'r']
+        );
 
-    let options: Vec<&str> = task_names.iter().map(|s| &**s).collect();
-
-    let keys: Vec<Key> = vec![
-        Key {
-            key: 'e',
-            description: String::from("Press 'e' to exit"),
-        },
-        Key {
-            key: 'r',
-            description: String::from("Press 'r' to delete"),
-        },
-    ];
-    let menu_results: MenuResult = create_menu("Tasks", options, keys, false);
-
-    if menu_results.key == 'e' {
-        main_menu();
-    } else if menu_results.key == 'r' {
-        let mut tasks: Vec<Task> = read_db();
-        tasks.remove(menu_results.index);
-        update_db(tasks);
-        list_edit_remove();
+        if menu_results.key == 'r' {
+            let mut tasks: Vec<Task> = read_db();
+            tasks.remove(menu_results.selected);
+            update_db(tasks);
+            list_edit_remove();
+        }
     }
 }
 
