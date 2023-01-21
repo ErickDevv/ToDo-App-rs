@@ -25,7 +25,7 @@ fn main_menu() {
     while exit_menu == false {
         let menu_results: MenuResult = create_menu!(
             "Menú",
-            "https://github.com/ErickDevv/rsmenuu",
+            "https://github.com/ErickDevv/TodoApp-Rust",
             vec!["Press 'e' to exit"],
             vec!["Add", "List/Edit/Remove"],
             vec!['e', 'x']
