@@ -77,7 +77,8 @@ fn list_edit_remove() {
             "",
             vec!["Press 'e' to exit", "Press 'r' to delete"],
             options,
-            vec!['e', 'r']
+            vec!['e', 'r'],
+            "left"
         );
 
         if menu_results.key == 'r' {
