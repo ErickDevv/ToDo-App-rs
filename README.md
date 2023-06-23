@@ -1,1 +1,1 @@
-# TodoApp-Rust
+# TodoApp-rs
