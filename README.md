@@ -1,1 +1,1 @@
-# TodoApp-rs
+# todoapp-rs
